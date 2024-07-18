@@ -58,7 +58,7 @@ const GameLoop = ({ children, allCharactersData }) => {
         return () => {
             loopRef.current && cancelAnimationFrame(loopRef.current);
         }
-    }, [loopRef, tick]);
+    }, [loopRef, tick])
 
     useEffect(() => {
         document.addEventListener('keypress', moveMyCharacter);
