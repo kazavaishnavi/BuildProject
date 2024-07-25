@@ -1,12 +1,15 @@
-import React, {useEffect, useContext} from 'react';
-import {connect} from 'react-redux';
+import React, { useEffect, useContext } from 'react';
+import { connect } from 'react-redux';
 
 import CanvasConext from './CanvasContext';
-import {CHARACTER_IMAGE_SIZE, CHARACTER_CLASSES_MAP} from './characterConstants';
-import {TILE_SIZE} from './mapConstants';
-import {loadCharacter} from './slices/statusSlice';
+import { CHARACTER_IMAGE_SIZE, CHARACTER_CLASSES_MAP } from './characterConstants';
+import { TILE_SIZE } from './mapConstants';
+import { loadCharacter } from './slices/statusSlice';
 import { MY_CHARACTER_INIT_CONFIG } from './characterConstants';
-import {update as updateAllCharactersData} from './slices/allCharactersSlice'
+import { update as updateAllCharactersData } from './slices/allCharactersSlice'
+import { firebaseDatabase } from "./firebase/firebase";
+import { set, ref } from "firebase/database";
+import FirebasePositionListener from './firebaseListener';
 
 
 function MyCharacter({ myCharactersData, loadCharacter, updateAllCharactersData, webrtcSocket }) {
@@ -20,7 +23,13 @@ function MyCharacter({ myCharactersData, loadCharacter, updateAllCharactersData,
         const users = {};
         const myId = MY_CHARACTER_INIT_CONFIG.id;
         users[myId] = myInitData;
-        updateAllCharactersData(users);
+
+        //updateAllCharactersData(users);
+
+        const dbRef = ref(firebaseDatabase, 'users/', MY_CHARACTER_INIT_CONFIG.id);
+
+        set(dbRef, users);
+
     }, [webrtcSocket]);
 
     useEffect(() => {
@@ -47,9 +56,10 @@ function MyCharacter({ myCharactersData, loadCharacter, updateAllCharactersData,
 }
 
 const mapStateToProps = (state) => {
-    return {myCharactersData: state.allCharacters.users[MY_CHARACTER_INIT_CONFIG.id]};
+    return { myCharactersData: state.allCharacters.users[MY_CHARACTER_INIT_CONFIG.id] };
 };
 
-const mapDispatch = {loadCharacter, updateAllCharactersData};
+const mapDispatch = { loadCharacter, updateAllCharactersData };
 
 export default connect(mapStateToProps, mapDispatch)(MyCharacter);
+

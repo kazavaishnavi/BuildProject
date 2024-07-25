@@ -4,7 +4,11 @@ import CanvasContext from './CanvasContext';
 import { MOVE_DIRECTIONS, MAP_DIMENSIONS, TILE_SIZE } from './mapConstants';
 import { MY_CHARACTER_INIT_CONFIG } from './characterConstants';
 import { checkMapCollision } from './utils';
-import { update } from './slices/allCharactersSlice';
+import { update as updateAllCharactersData } from './slices/allCharactersSlice';
+import FirebasePositionListener from './firebaseListener';
+import { firebaseDatabase } from "./firebase/firebase";
+import { set, ref } from "firebase/database";
+
 
 const GameLoop = ({ children, allCharactersData }) => {
     const canvasRef = useRef(null);
@@ -22,8 +26,8 @@ const GameLoop = ({ children, allCharactersData }) => {
     const mycharacterData = allCharactersData[MY_CHARACTER_INIT_CONFIG.id];
 
     const moveMyCharacter = useCallback((e) => {
-        
-        var currentPosition = mycharacterData.position ; 
+
+        var currentPosition = mycharacterData.position;
         const key = e.key;
         if (MOVE_DIRECTIONS[key]) {
             // ***********************************************
@@ -34,17 +38,21 @@ const GameLoop = ({ children, allCharactersData }) => {
                 x: currentPosition.x + dx,
                 y: currentPosition.y + dy,
             };
-            
-            if (!checkMapCollision(newPosition.x, newPosition.y) ) {
-              const updatedUsers = {
-                    allCharactersData,
-                    [MY_CHARACTER_INIT_CONFIG.id]: { mycharacterData, position: newPosition }
-                };
-                dispatch(update(updatedUsers));
-             
+
+            if (!checkMapCollision(newPosition.x, newPosition.y)) {
+
+                /*const updatedUsers = {
+                      // allCharactersData,
+                       //[MY_CHARACTER_INIT_CONFIG.id]: { mycharacterData, position: newPosition }
+                   }; */
+
+                const positionref = ref(firebaseDatabase, 'users/' + MY_CHARACTER_INIT_CONFIG.id + '/position');
+
+                set(positionref, newPosition);
+
             }
         }
-    }, [mycharacterData]);
+    }, [mycharacterData, dispatch, allCharactersData]);
 
     const tick = useCallback(() => {
         if (context != null) {
@@ -53,7 +61,7 @@ const GameLoop = ({ children, allCharactersData }) => {
         loopRef.current = requestAnimationFrame(tick);
     }, [context]);
 
-    useEffect(() => {   
+    useEffect(() => {
         loopRef.current = requestAnimationFrame(tick);
         return () => {
             loopRef.current && cancelAnimationFrame(loopRef.current);
@@ -69,6 +77,7 @@ const GameLoop = ({ children, allCharactersData }) => {
 
     return (
         <CanvasContext.Provider value={context}>
+            <FirebasePositionListener></FirebasePositionListener>
             <canvas
                 ref={canvasRef}
                 width={TILE_SIZE * MAP_DIMENSIONS.COLS}
@@ -85,3 +94,5 @@ const mapStateToProps = (state) => {
 };
 
 export default connect(mapStateToProps, {})(GameLoop);
+
+
