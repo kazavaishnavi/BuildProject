@@ -7,7 +7,8 @@ import { checkMapCollision } from './utils';
 import { update as updateAllCharactersData } from './slices/allCharactersSlice';
 import FirebasePositionListener from './firebaseListener';
 import { firebaseDatabase } from "./firebase/firebase";
-import { set, ref } from "firebase/database";
+import { set, ref,onDisconnect  } from "firebase/database";
+import OtherCharacters from './otherCharacters';
 
 
 const GameLoop = ({ children, allCharactersData }) => {
@@ -20,10 +21,27 @@ const GameLoop = ({ children, allCharactersData }) => {
         console.log("initial setContext");
         setContext({ canvas: canvasRef.current.getContext('2d'), frameCount: 0 });
     }, [setContext]);
+   useEffect(() => {
+        // Set up onDisconnect callback to remove character from Firebase
+        const dbRef = ref(firebaseDatabase, `users/${MY_CHARACTER_INIT_CONFIG.id}`);
+        const disconnectRef = onDisconnect(dbRef);
+        disconnectRef.remove()
+            .then(() => {
+                console.log("Character will be removed on disconnect");
+            })
+            .catch((error) => {
+                console.error("Error setting up onDisconnect:", error);
+            });
+
+        return () => {
+            disconnectRef.cancel();
+        };
+    }, []);
 
     // keeps the reference to the main rendering loop
     const loopRef = useRef();
     const mycharacterData = allCharactersData[MY_CHARACTER_INIT_CONFIG.id];
+    
 
     const moveMyCharacter = useCallback((e) => {
 
@@ -78,6 +96,7 @@ const GameLoop = ({ children, allCharactersData }) => {
     return (
         <CanvasContext.Provider value={context}>
             <FirebasePositionListener></FirebasePositionListener>
+      
             <canvas
                 ref={canvasRef}
                 width={TILE_SIZE * MAP_DIMENSIONS.COLS}
