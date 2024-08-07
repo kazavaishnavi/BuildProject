@@ -14,7 +14,17 @@ app.get('/', (req, res) => {
         res.send('Hello World');
 });
 
-io.on("connection", (socket) => {
+io.on('connection', (socket) => {
     socket.emit("me", socket.id);
+    socket.on('sendOffer', ({ callToUserSocketId, callFromUserSocketId, offerSignal }) => {
+    console.log(`sendOffer event received from ${callFromUserSocketId} to ${callToUserSocketId}`);
+    io.to(callToUserSocketId).emit('receiveOffer', {
+        offerSignal,
+        callFromUserSocketId
+    });
+        
+    });
+
+   
 });
 server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
