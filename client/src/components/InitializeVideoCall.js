@@ -12,6 +12,7 @@ function InitiatedVideoCall({ mySocketId, myStream, othersSocketId, webrtcSocket
             stream: myStream,
         });
         peer.on('signal', signal => {
+            //  console.log('sent sendOffer',signal);
             webrtcSocket.emit('sendOffer', { callToUserSocketId: othersSocketId, callFromUserSocketId: mySocketId, offerSignal: signal });
         });
         return peer;
@@ -19,11 +20,17 @@ function InitiatedVideoCall({ mySocketId, myStream, othersSocketId, webrtcSocket
 
     useEffect(() => {
         peerRef.current = createPeer(othersSocketId, mySocketId, myStream, webrtcSocket);
-        
+
+        //Week 5 Receive logic
+        webrtcSocket.on("receiveAnswer", payload => {
+            console.log("received answer from ", payload.callToUserSocketId, ", the answer received: ", Object.keys(payload.answerSignal));
+        });
+
+
     }, [mySocketId, myStream, othersSocketId, webrtcSocket, createPeer]);
 
     return <> </>
-    
+
 }
 
 export default InitiatedVideoCall;
